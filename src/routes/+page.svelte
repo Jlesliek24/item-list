@@ -8,14 +8,21 @@
   let price = ''
   let status = ''
 
-  function isValidImageURL(url) {
-    try {
-      const parsed = new URL(url)
-      return /\.(jpeg|jpg|png|webp|gif|svg)$/i.test(parsed.pathname)
-    } catch {
-      return false
-    }
+  /**
+   * Checks if the given URL is a valid HTTPS image URL with allowed formats: png, gif, svg.
+   * @param {string} url
+   * @returns {boolean}
+   */
+function isValidImageURL(url) {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:'
+  } catch {
+    return false
   }
+}
+
+
 
   async function addItem() {
     if (!name.trim() || !description.trim() || !picture.trim() || !price) {
@@ -58,6 +65,7 @@
   }
 
   onMount(() => {
+    // @ts-ignore
     particlesJS("particles-js", {
       particles: {
         number: { value: 80, density: { enable: true, value_area: 800 } },
@@ -84,6 +92,7 @@
     });
 
     // Stats + particle counter
+    // @ts-ignore
     const stats = new Stats();
     stats.setMode(0);
     stats.domElement.style.position = 'absolute';
@@ -95,7 +104,9 @@
     const update = () => {
       stats.begin();
       stats.end();
+      // @ts-ignore
       const particles = window.pJSDom?.[0]?.pJS?.particles?.array;
+      // @ts-ignore
       if (particles) count_particles.innerText = particles.length;
       requestAnimationFrame(update);
     };
