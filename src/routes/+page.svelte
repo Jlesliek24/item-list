@@ -7,22 +7,17 @@
   let picture = ''
   let price = ''
   let status = ''
+  let isImageValid = true
 
-  /**
-   * Checks if the given URL is a valid HTTPS image URL with allowed formats: png, gif, svg.
-   * @param {string} url
-   * @returns {boolean}
-   */
-function isValidImageURL(url) {
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'https:'
-  } catch {
-    return false
+  // @ts-ignore
+  function isValidImageURL(url) {
+    try {
+      const parsed = new URL(url)
+      return parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
   }
-}
-
-
 
   async function addItem() {
     if (!name.trim() || !description.trim() || !picture.trim() || !price) {
@@ -31,7 +26,12 @@ function isValidImageURL(url) {
     }
 
     if (!isValidImageURL(picture)) {
-      status = '❌ Picture URL must be a valid image link (e.g. ending in .jpg, .png).'
+      status = '❌ Picture URL must be a valid HTTPS link.'
+      return
+    }
+
+    if (!isImageValid) {
+      status = '❌ The image URL is not loading correctly.'
       return
     }
 
@@ -53,6 +53,7 @@ function isValidImageURL(url) {
       description = ''
       picture = ''
       price = ''
+      isImageValid = true
     }
   }
 
@@ -62,6 +63,7 @@ function isValidImageURL(url) {
     picture = ''
     price = ''
     status = ''
+    isImageValid = true
   }
 
   onMount(() => {
@@ -91,7 +93,6 @@ function isValidImageURL(url) {
       retina_detect: true
     });
 
-    // Stats + particle counter
     // @ts-ignore
     const stats = new Stats();
     stats.setMode(0);
@@ -139,8 +140,29 @@ function isValidImageURL(url) {
 
     <div class="form-group">
       <label for="picture">Picture URL</label>
-      <input id="picture" bind:value={picture} required placeholder="https://example.com/image.jpg" />
+      <input
+        id="picture"
+        bind:value={picture}
+        required
+        placeholder="https://example.com/image.jpg"
+        on:input={() => isImageValid = true}
+      />
     </div>
+
+    {#if picture}
+      <div class="image-preview">
+        <p>🔍 Image Preview:</p>
+        <img
+          src={picture}
+          alt="Image preview"
+          on:error={() => isImageValid = false}
+          on:load={() => isImageValid = true}
+        />
+        {#if !isImageValid}
+          <p class="image-error">❌ This URL does not point to a valid image.</p>
+        {/if}
+      </div>
+    {/if}
 
     <div class="form-group">
       <label for="price">Price</label>
@@ -159,7 +181,6 @@ function isValidImageURL(url) {
 </main>
 
 <style>
-  /* Particle Background */
   #particles-js {
     position: fixed;
     width: 100%;
@@ -183,7 +204,6 @@ function isValidImageURL(url) {
     font-family: Helvetica, Arial, sans-serif;
   }
 
-  /* Form Style */
   .form-wrapper {
     max-width: 600px;
     margin: 5rem auto;
@@ -281,5 +301,24 @@ function isValidImageURL(url) {
     color: #ffeb3b;
     font-weight: bold;
   }
-</style>
 
+  .image-preview {
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  .image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+  }
+
+  .image-error {
+    color: #ff5555;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: bold;
+  }
+</style>
