@@ -22,6 +22,7 @@
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.49.4",
+		"@sveltejs/adapter-netlify": "^5.0.2",
 		"prettier": "^3.5.3"
 	}
 }
