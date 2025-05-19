@@ -1,13 +1,33 @@
 <script>
-  import { supabase } from '../lib/supabase.js'
+  import { supabase } from '$lib/supabase.js'
+  import { onMount } from 'svelte'
 
   let name = ''
   let description = ''
   let picture = ''
-  let price = 0
+  let price = ''
   let status = ''
 
+  function isValidImageURL(url) {
+    try {
+      const parsed = new URL(url)
+      return /\.(jpeg|jpg|png|webp|gif|svg)$/i.test(parsed.pathname)
+    } catch {
+      return false
+    }
+  }
+
   async function addItem() {
+    if (!name.trim() || !description.trim() || !picture.trim() || !price) {
+      status = '❌ All fields must be filled.'
+      return
+    }
+
+    if (!isValidImageURL(picture)) {
+      status = '❌ Picture URL must be a valid image link (e.g. ending in .jpg, .png).'
+      return
+    }
+
     const { error } = await supabase.from('items').insert([
       {
         name,
@@ -17,56 +37,238 @@
         is_archived: false
       }
     ])
+
     if (error) {
-      status = `❌ Failed: ${error.message}`
+      status = `❌ Supabase error: ${error.message}`
     } else {
       status = `✅ Item "${name}" added successfully!`
       name = ''
       description = ''
       picture = ''
-      price = 0
+      price = ''
     }
   }
+
+  function resetForm() {
+    name = ''
+    description = ''
+    picture = ''
+    price = ''
+    status = ''
+  }
+
+  onMount(() => {
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: "#ffffff" },
+        shape: { type: "circle", stroke: { width: 0, color: "#000000" }, polygon: { nb_sides: 5 } },
+        opacity: { value: 0.5 },
+        size: { value: 3, random: true },
+        line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
+        move: { enable: true, speed: 6, out_mode: "out" }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" },
+          resize: true
+        },
+        modes: {
+          repulse: { distance: 200, duration: 0.4 },
+          push: { particles_nb: 4 }
+        }
+      },
+      retina_detect: true
+    });
+
+    // Stats + particle counter
+    const stats = new Stats();
+    stats.setMode(0);
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+    document.body.appendChild(stats.domElement);
+
+    const count_particles = document.querySelector('.js-count-particles');
+    const update = () => {
+      stats.begin();
+      stats.end();
+      const particles = window.pJSDom?.[0]?.pJS?.particles?.array;
+      if (particles) count_particles.innerText = particles.length;
+      requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+  });
 </script>
 
-<main>
-  <h1>Add Item</h1>
-  <form on:submit|preventDefault={addItem}>
-    <label>Name</label>
-    <input bind:value={name} required />
+<svelte:head>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
+</svelte:head>
 
-    <label>Description</label>
-    <input bind:value={description} />
+<!-- Particle background -->
+<div id="particles-js"></div>
 
-    <label>Picture URL</label>
-    <input bind:value={picture} />
+<main class="form-wrapper">
+  <h1 class="form-title">ADD ITEM</h1>
+  <p class="form-subtitle">Please fill out the item details below to add a new product to your list.</p>
 
-    <label>Price</label>
-    <input type="number" bind:value={price} min="0" required />
+  <form on:submit|preventDefault={addItem} class="form-box">
+    <div class="form-group">
+      <label for="name">Item Name</label>
+      <input id="name" bind:value={name} required placeholder="e.g., Iron Sword" />
+    </div>
 
-    <button type="submit">Submit</button>
+    <div class="form-group">
+      <label for="desc">Description</label>
+      <input id="desc" bind:value={description} required placeholder="Short item description..." />
+    </div>
+
+    <div class="form-group">
+      <label for="picture">Picture URL</label>
+      <input id="picture" bind:value={picture} required placeholder="https://example.com/image.jpg" />
+    </div>
+
+    <div class="form-group">
+      <label for="price">Price</label>
+      <input id="price" type="number" bind:value={price} min="1" required placeholder="Enter item price" />
+    </div>
+
+    <div class="form-buttons">
+      <button type="submit" class="submit">SUBMIT</button>
+      <button type="button" on:click={resetForm} class="reset">RESET</button>
+    </div>
+
+    {#if status}
+      <p class="status">{status}</p>
+    {/if}
   </form>
-
-  {#if status}
-    <p>{status}</p>
-  {/if}
 </main>
 
 <style>
-  main {
-    max-width: 500px;
-    margin: auto;
+  /* Particle Background */
+  #particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    top: 0;
+    left: 0;
+    z-index: -1;
+  }
+
+  .count-particles {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+    color: #13E8E9;
+    font-size: 0.8rem;
+    z-index: 10;
+    background: #000022;
+    padding: 4px;
+    border-radius: 0 0 4px 0;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+
+  /* Form Style */
+  .form-wrapper {
+    max-width: 600px;
+    margin: 5rem auto;
     padding: 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+  }
+
+  .form-title {
+    font-size: 2rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 2rem;
+  }
+
+  .form-box {
+    background: #0f1d27;
+    padding: 2rem;
+    border: 2px solid #aaa;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: left;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    color: #eee;
   }
 
   input {
-    display: block;
     width: 100%;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    padding: 0.6rem;
+    background: #182b38;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  input::placeholder {
+    color: #999;
+  }
+
+  .form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
   }
 
   button {
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.5rem;
+    border: none;
+    font-weight: bold;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+  }
+
+  .submit {
+    background: #f1592a;
+    color: white;
+  }
+
+  .submit:hover {
+    background: #d14a1a;
+  }
+
+  .reset {
+    background: #555;
+    color: white;
+  }
+
+  .reset:hover {
+    background: #333;
+  }
+
+  .status {
+    margin-top: 1rem;
+    text-align: center;
+    color: #ffeb3b;
+    font-weight: bold;
   }
 </style>
+
